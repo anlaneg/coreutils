@@ -145,7 +145,7 @@ main (int argc, char **argv)
         }
     }
 
-  newmode = MODE_RW_UGO;
+  newmode = MODE_RW_UGO;/*设备的默认mask*/
   if (specified_mode)
     {
       mode_t umask_value;
@@ -213,7 +213,7 @@ main (int argc, char **argv)
 #ifndef S_IFBLK
       error (EXIT_FAILURE, 0, _("block special files not supported"));
 #else
-      node_type = S_IFBLK;
+      node_type = S_IFBLK;/*创建块设备*/
 #endif
       goto block_or_character;
 
@@ -222,27 +222,32 @@ main (int argc, char **argv)
 #ifndef S_IFCHR
       error (EXIT_FAILURE, 0, _("character special files not supported"));
 #else
-      node_type = S_IFCHR;
+      node_type = S_IFCHR;/*创建的为字符设备*/
 #endif
       goto block_or_character;
 
+      /*处理块设备或者字符设备*/
     block_or_character:
       {
+    	  /*取要创建内容的major,minor*/
         char const *s_major = argv[optind + 2];
         char const *s_minor = argv[optind + 3];
         uintmax_t i_major, i_minor;
         dev_t device;
 
+        /*字符串转换为i_major*/
         if (xstrtoumax (s_major, nullptr, 0, &i_major, "") != LONGINT_OK
             || i_major != (major_t) i_major)
           error (EXIT_FAILURE, 0,
                  _("invalid major device number %s"), quote (s_major));
 
+        /*字符串转为i_minor*/
         if (xstrtoumax (s_minor, nullptr, 0, &i_minor, "") != LONGINT_OK
             || i_minor != (minor_t) i_minor)
           error (EXIT_FAILURE, 0,
                  _("invalid minor device number %s"), quote (s_minor));
 
+        /*利用major,minor生成device id*/
         device = makedev (i_major, i_minor);
 #ifdef NODEV
         if (device == NODEV)
@@ -253,7 +258,8 @@ main (int argc, char **argv)
         if (set_security_context)
           defaultcon (set_security_context, argv[optind], node_type);
 
-        if (mknod (argv[optind], newmode | node_type, device) != 0)
+        /*触发系统调用，创建设备*/
+        if (mknod (argv[optind]/*设备路径*/, newmode | node_type, device) != 0)
           error (EXIT_FAILURE, errno, "%s", quotef (argv[optind]));
       }
       break;
